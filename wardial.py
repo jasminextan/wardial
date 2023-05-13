@@ -202,10 +202,13 @@ async def _wardial_async(hosts, max_connections=500, timeout=10, schema='http'):
             ) as session:
         # FIXME (Task 2):
         # The following code is "correct" in the sense that it gets the right results.
+        # The problem is that it is not concurrent.
+        # Modify the code to use the `asyncio.gather` function to enable concurrency.
         results = []
         for host in hosts:
-            results.append(await is_server_at_host(session,host))
+            results.append(is_server_at_host(session, host))
         return await asyncio.gather(*results)
+
 
 def wardial(hosts, **kwargs):
     '''
@@ -223,7 +226,6 @@ def wardial(hosts, **kwargs):
     # You should create a new event loop,
     # and use this event loop to call the `_wardial_async` function.
     # Ensure that all of the kwargs parameters get passed to `_wardial_async`.
-    # You will have to do some post-processing of the results of this function to convert the output.
     loop = asyncio.new_event_loop()
     xs = loop.run_until_complete(_wardial_async(hosts, **kwargs))
     tbr = []
@@ -234,11 +236,11 @@ def wardial(hosts, **kwargs):
     return tbr
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
 
     # process the cmd line args
     import argparse
-    parser = argparse.ArgumentParser(description='Scan a section of the internet for webservers')
+    parser = argparse.ArgumentParser(description='Scans')
     parser.add_argument('netmask')
     parser.add_argument('--timeout', type=int, default=10)
     parser.add_argument('--max_connections', type=int, default=500)
@@ -257,5 +259,7 @@ if __name__=='__main__':
 
     # run the wardial
     ips = netmask_to_ips(args.netmask)
-    alive_ips = wardial(ips, timeout=args.timeout, max_connections=args.max_connections, schema=args.schema)
+    alive_ips = wardial(ips, timeout=args.timeout,
+                        max_connections=args.max_connections,
+                        schema=args.schema)
     print('total ips found =', len(alive_ips))
